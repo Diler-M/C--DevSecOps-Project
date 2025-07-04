@@ -12,6 +12,11 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '6.0.x'
+
       - name: Setup MSBuild and NuGet
         uses: microsoft/setup-msbuild@v1.1
 
@@ -20,22 +25,16 @@ jobs:
 
       - name: Begin SonarCloud Scan
         env:
-            SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: |
-          dotnet sonarscanner begin `
-            /k:"c-devsecops-project" `
-            /o:"c-devsecops-project" `
-            /d:sonar.host.url="https://sonarcloud.io" `
-            /d:sonar.token="${{ secrets.SONAR_TOKEN }}" `
-            /d:sonar.projectBaseDir="${{ github.workspace }}" ` # *** IMPORTANT FIX HERE ***
-            /d:sonar.sources="${{ github.workspace }}"          # *** IMPORTANT FIX HERE ***
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: dotnet sonarscanner begin /k:"c-devsecops-project" /o:"c-devsecops-project" /d:sonar.host.url="https://sonarcloud.io" /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
 
       - name: Build C# Application
+
         run: msbuild.exe "SomeConsoleApplication.sln" /t:Rebuild /p:Configuration=Release /p:Platform="Any CPU" /p:RestorePackages=true
 
       - name: End SonarCloud Scan
         env:
-            SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: dotnet sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
 
   security:
@@ -62,4 +61,4 @@ jobs:
         with:
           target: 'http://testphp.vulnweb.com/'
           rules_file_name: '.zap/rules.tsv'
-          cmd_options: '-a'
+          cmd_options: '-a'1
