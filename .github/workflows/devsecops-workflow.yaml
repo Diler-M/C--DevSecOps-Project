@@ -11,38 +11,36 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      
+
       - name: Install SonarCloud Global Tool
-        run:  dotnet tool install --global dotnet-sonarscanner
-          
-      
+        run: dotnet tool install --global dotnet-sonarscanner
+
       - name: Begin SonarCloud Scan
         env:
             SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: dotnet sonarscanner begin /k:"c-devsecops-project" /o:"c-devsecops-project" /d:sonar.host.url="https://sonarcloud.io" /d:sonar.token="${{ secrets.SONAR_TOKEN }}"    
-        
-        
+        run: dotnet sonarscanner begin /k:"c-devsecops-project" /o:"c-devsecops-project" /d:sonar.host.url="https://sonarcloud.io" /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
+
       - name: Build C# Application
-        run: dotnet build --no-incremental
-    
+        run: msbuild.exe "SomeConsoleApplication" /p:Configuration=Release /p:Platform="Any CPU" /p:RestorePackages=true
+
       - name: End SonarCloud Scan
         env:
             SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: dotnet sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
 
   security:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     name: Run the SCA scan on the source code
     steps:
       - uses: actions/checkout@master
-      - name: RunSnyk to check for vulnerabilities
-        uses: snyk/actions/maven@master
+      - name: Run Snyk to check for vulnerabilities
+        uses: snyk/actions/dotnet@master
         continue-on-error: true
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
   zap_scan:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     name: Scan the application
     steps:
       - name: Checkout
