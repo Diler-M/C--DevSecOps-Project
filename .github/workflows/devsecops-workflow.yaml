@@ -22,13 +22,13 @@ jobs:
         env:
             SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
-          dotnet sonarscanner begin \
-            /k:"c-devsecops-project" \
-            /o:"c-devsecops-project" \
-            /d:sonar.host.url="https://sonarcloud.io" \
-            /d:sonar.token="${{ secrets.SONAR_TOKEN }}" \
-            /d:sonar.projectBaseDir="." \
-            /d:sonar.sources="." \
+          dotnet sonarscanner begin `
+            /k:"c-devsecops-project" `
+            /o:"c-devsecops-project" `
+            /d:sonar.host.url="https://sonarcloud.io" `
+            /d:sonar.token="${{ secrets.SONAR_TOKEN }}" `
+            /d:sonar.projectBaseDir="." `
+            /d:sonar.sources="." `
             /d:sonar.project.binaries="SomeConsoleApplication.sln"
 
       - name: Build C# Application
