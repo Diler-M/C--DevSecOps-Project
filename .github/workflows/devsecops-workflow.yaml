@@ -1,71 +1,61 @@
-name: SAST, SCA & DAST Scan on C# Project
-
-on: [push, pull_request]
+name: SAST, SCA, DAST security scans
+on: push
 
 jobs:
-  sast_scan:
+  sast-scan:
     runs-on: ubuntu-latest
-    name: SonarCloud SAST Scan
+    name: Run unit tests and SAST scan on the source code
 
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
+          
       - name: Setup .NET SDK
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '6.0.x'
-
+      
       - name: Install SonarCloud Global Tool
-        run: dotnet tool install --global dotnet-sonarscanner
-
+        run:  dotnet tool install --global dotnet-sonarscanner
+          
+      
       - name: Begin SonarCloud Scan
         env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: dotnet sonarscanner begin /k:"your_sonarcloud_project_key" /o:"your_sonarcloud_organization" /d:sonar.host.url="https://sonarcloud.io" /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
-
+            SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: dotnet sonarscanner begin /k:"C--DevSecOps-Project" /o:"C--DevSecOps-Project" /d:sonar.host.url="https://sonarcloud.io" /d:sonar.token="${{ secrets.SONAR_TOKEN }}"    
+        
+        
       - name: Build C# Application
-        run: dotnet build --no-incremental 
-
+        run: dotnet build --no-incremental
+    
       - name: End SonarCloud Scan
         env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+            SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: dotnet sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
-  
-  sca_scan:
+
+  security:
     runs-on: ubuntu-latest
-    name: Snyk SCA Scan
-
+    name: Run the SCA scan on the source code
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Install Snyk
-        run: npm install -g snyk
-
-      - name: Run Snyk to check for vulnerabilities
-        continue-on-error: true 
+      - uses: actions/checkout@master
+      - name: RunSnyk to check for vulnerabilities
+        uses: snyk/actions/maven@master
+        continue-on-error: true
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        run: snyk test --unmanaged
-
-  dast_scan:
+  zap_scan:
     runs-on: ubuntu-latest
-    name: OWASP ZAP DAST Scan
-
-    needs: [sast_scan, sca_scan]
-    
+    name: Run DAST scan on the web application
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v2
         with:
-          ref: ${{ github.ref }}
-
-      - name: ZAP Baseline Scan
+          ref: master
+      - name: ZAP Scan
         uses: zaproxy/action-baseline@v0.14.0
         with:
-          target: 'http://your-deployed-csharp-app-url.com'
+          target: 'http://testphp.vulnweb.com/'
           rules_file_name: '.zap/rules.tsv'
           cmd_options: '-a'
