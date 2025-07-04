@@ -12,6 +12,9 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Setup MSBuild and NuGet
+        uses: microsoft/setup-msbuild@v1.1
+
       - name: Install SonarCloud Global Tool
         run: dotnet tool install --global dotnet-sonarscanner
 
