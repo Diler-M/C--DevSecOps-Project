@@ -27,17 +27,16 @@ jobs:
             /o:"c-devsecops-project" `
             /d:sonar.host.url="https://sonarcloud.io" `
             /d:sonar.token="${{ secrets.SONAR_TOKEN }}" `
-            /d:sonar.projectBaseDir="." ` # Correctly sets the base directory to the repo root
-            /d:sonar.sources="."         # Correctly includes all source files in the repo root and subdirs
-            # Removed: /d:sonar.project.binaries="SomeConsoleApplication.sln" - This parameter is not for the solution file
-            # SonarScanner will listen to the MSBuild step to find the projects and their binaries.
+            /d:sonar.projectBaseDir="." `
+            /d:sonar.sources="."
+          # All comments that were on the same line as the ` or at the end of the final line are removed from this block.
 
       - name: Build C# Application
         run: msbuild.exe "SomeConsoleApplication.sln" /p:Configuration=Release /p:Platform="Any CPU" /p:RestorePackages=true
 
       - name: End SonarCloud Scan
         env:
-            SONAR_TOKEN: ${{ secrets.SNAK_TOKEN }}
+            SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: dotnet sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
 
   security:
