@@ -12,7 +12,18 @@ jobs:
         with:
           fetch-depth: 0
 
+      # --- NEW STEP HERE ---
+      - name: Setup MSBuild and NuGet
+        uses: microsoft/setup-msbuild@v1.1 # This action puts msbuild.exe on the PATH
+      # --- END NEW STEP ---
+
+      # Keep this to ensure 'dotnet sonarscanner' command is available
       - name: Install SonarCloud Global Tool
+        # We need a .NET (Core) SDK for 'dotnet tool install' and 'dotnet sonarscanner' commands.
+        # 'windows-latest' does have recent .NET SDKs pre-installed (e.g., .NET 8.0).
+        # If 'dotnet tool install' fails, you might need to add 'uses: actions/setup-dotnet@v4' back
+        # but WITHOUT 'dotnet-version: 4.5.2'. Instead, specify a modern version like '6.0.x' or '8.0.x'
+        # just for the CLI tools. Let's try it as is first.
         run: dotnet tool install --global dotnet-sonarscanner
 
       - name: Begin SonarCloud Scan
@@ -21,7 +32,16 @@ jobs:
         run: dotnet sonarscanner begin /k:"c-devsecops-project" /o:"c-devsecops-project" /d:sonar.host.url="https://sonarcloud.io" /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
 
       - name: Build C# Application
-        run: msbuild.exe "SomeConsoleApplication" /p:Configuration=Release /p:Platform="Any CPU" /p:RestorePackages=true
+        # --- IMPORTANT CORRECTION HERE ---
+        # You used "SomeConsoleApplication" which is likely a project name, not a solution name.
+        # It needs to be the actual solution file name with its .sln extension.
+        # For example, "C--DevSecOps-Project.sln" if your solution file is named after your repo.
+        # If you truly only have a .csproj, then use "SomeConsoleApplication.csproj".
+        # Let's assume you have a solution file named after your main repo folder.
+        run: msbuild.exe "C--DevSecOps-Project.sln" /p:Configuration=Release /p:Platform="Any CPU" /p:RestorePackages=true
+        # Replace "C--DevSecOps-Project.sln" with the actual name of your .sln file.
+        # Or if only a project file, use "SomeConsoleApplication.csproj"
+        # --- END CORRECTION ---
 
       - name: End SonarCloud Scan
         env:
