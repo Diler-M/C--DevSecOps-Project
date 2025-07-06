@@ -1,6 +1,3 @@
-name: SAST, SCA, DAST security scans
-on: push
-
 jobs:
   sast-scan:
     runs-on: windows-latest
@@ -25,23 +22,15 @@ jobs:
 
       - name: Begin SonarCloud Scan
         env:
-<<<<<<< HEAD
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: dotnet sonarscanner begin /k:"c-devsecops-project" /o:"c-devsecops-project" /d:sonar.host.url="https://sonarcloud.io" /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
-=======
-            SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        # *** ALL ON A SINGLE LINE TO ELIMINATE ALL MULTI-LINE PARSING ISSUES ***
-        run: dotnet sonarscanner begin /k:"c-devsecops-project" /o:"c-devsecops-project" /d:sonar.host.url="https://sonarcloud.io" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.projectBaseDir="${{ github.workspace }}" /d:sonar.sources="${{ github.workspace }}"
->>>>>>> d40693466357e383a2863374a4680da9533e618b
-
       - name: Build C# Application
-
         run: msbuild.exe "SomeConsoleApplication.sln" /t:Rebuild /p:Configuration=Release /p:Platform="Any CPU" /p:RestorePackages=true
-
       - name: End SonarCloud Scan
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: dotnet sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
+
 
   security:
     runs-on: windows-latest
