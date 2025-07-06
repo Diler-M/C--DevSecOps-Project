@@ -1,11 +1,10 @@
-name: Build .Net Pipeline
+name: SAST, SCA and DAST Scan
 
 on:
-  # Trigger analysis when pushing in master or pull requests, and when creating
-  # a pull request.
   push:
     branches:
       - master
+  
   pull_request:
     types:
       - opened
@@ -13,70 +12,59 @@ on:
       - reopened
 
 jobs:
-  sonarcloud:
-    name: SonarCloud scan for SAST 
+  SonarCloud:
+    name: Build and analyze
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
-        with:
-          # Shallow clones should be disabled for a better relevancy of analysis
-          fetch-depth: 0
-      - name: Set up JDK 21
+      - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
-          java-version: '21'
-          distribution: 'microsoft'
-
-      # Speed-up analysis by caching the scanner workspace
-      - name: Cache SonarCloud workspace
+          java-version: 17
+          distribution: 'zulu' # Alternative distribution options are available.
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
+      - name: Cache SonarQube Cloud packages
         uses: actions/cache@v4
         with:
-          path: ~\.sonar\cache
-          key: ${{ runner.os }}-sonar-cache
-          restore-keys: ${{ runner.os }}-sonar-cache
-
-      # Speed-up analysis by caching the scanner installation
-      - name: Cache SonarCloud scanner
+          path: ~\sonar\cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: ${{ runner.os }}-sonar
+      - name: Cache SonarQube Cloud scanner
         id: cache-sonar-scanner
         uses: actions/cache@v4
         with:
           path: .\.sonar\scanner
           key: ${{ runner.os }}-sonar-scanner
           restore-keys: ${{ runner.os }}-sonar-scanner
-
-      - name: Install SonarCloud scanner
+      - name: Install SonarQube Cloud scanner
         if: steps.cache-sonar-scanner.outputs.cache-hit != 'true'
         shell: powershell
-        # The --version argument is optional. If it is omitted the latest version will be installed.
         run: |
           New-Item -Path .\.sonar\scanner -ItemType Directory
-          dotnet tool update dotnet-sonarscanner --tool-path .\.sonar\scanner 
-
-      - name: Build
-        shell: powershell
+          dotnet tool update dotnet-sonarscanner --tool-path .\.sonar\scanner
+      - name: Build and analyze
         env:
-          # Needed to get some information about the pull request, if any
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # The secret referenced in the command-line by SONAR_TOKEN should be generated
-          # from https://sonarcloud.io/account/security/
-          # The organization and project arguments (see /o and /k) are displayed
-          # on the project dashboard in SonarCloud.
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        shell: powershell
         run: |
-          .\.sonar\scanner\dotnet-sonarscanner begin /k:"c--devsecops-project" /o:"c--devsecops-project" /d:sonar.login="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io"
-          dotnet build SomeConsoleApplication.sln
-          .\.sonar\scanner\dotnet-sonarscanner end /d:sonar.login="${{ secrets.SONAR_TOKEN }}"
+          .\.sonar\scanner\dotnet-sonarscanner begin /k:"c--devsecops-project" /o:"c-devsecops-project" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io"
+          dotnet build
+          .\.sonar\scanner\dotnet-sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
+
   security:
     runs-on: ubuntu-latest
-    needs: sonarcloud
+    needs: SonarCloud
     name: Run the SCA scan on the source code
     steps:
-      - uses: actions/checkout@master
-      - name: RunSnyk to check for vulnerabilities
+      - uses: actions/checkout@v4
+      - name: Run Snyk to check for vulnerabilities
         uses: snyk/actions/dotnet@master
         continue-on-error: true
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-  zap_scan:
+
+  zap-scan:
     runs-on: ubuntu-latest
     needs: security
     name: Run DAST scan on the web application
@@ -84,7 +72,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: master
+          ref: ${{ github.ref }}
+
       - name: ZAP Scan
         uses: zaproxy/action-baseline@v0.14.0
         with:
