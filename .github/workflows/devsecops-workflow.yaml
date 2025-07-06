@@ -25,8 +25,14 @@ jobs:
 
       - name: Begin SonarCloud Scan
         env:
+<<<<<<< HEAD
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: dotnet sonarscanner begin /k:"c-devsecops-project" /o:"c-devsecops-project" /d:sonar.host.url="https://sonarcloud.io" /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
+=======
+            SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        # *** ALL ON A SINGLE LINE TO ELIMINATE ALL MULTI-LINE PARSING ISSUES ***
+        run: dotnet sonarscanner begin /k:"c-devsecops-project" /o:"c-devsecops-project" /d:sonar.host.url="https://sonarcloud.io" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.projectBaseDir="${{ github.workspace }}" /d:sonar.sources="${{ github.workspace }}"
+>>>>>>> d40693466357e383a2863374a4680da9533e618b
 
       - name: Build C# Application
 
