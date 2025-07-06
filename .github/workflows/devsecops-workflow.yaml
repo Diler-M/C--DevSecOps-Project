@@ -16,10 +16,26 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: 17
+          distribution: 'zulu'
+
       - name: Setup MSBuild and NuGet
         uses: microsoft/setup-msbuild@v1.1
 
+
+      - name: Cache SonarCloud Global Tool
+        id: cache-sonar-scanner
+        uses: actions/cache@v4
+        with:
+          path: ~\sonar\scanner 
+          key: ${{ runner.os }}-sonar-scanner
+          restore-keys: ${{ runner.os }}-sonar-scanner
+
       - name: Install SonarCloud Global Tool
+        if: steps.cache-sonar-scanner.outputs.cache-hit != 'true'
         run: dotnet tool install --global dotnet-sonarscanner
 
       - name: Begin SonarCloud Scan
@@ -28,7 +44,6 @@ jobs:
         run: dotnet sonarscanner begin /k:"c-devsecops-project" /o:"c-devsecops-project" /d:sonar.host.url="https://sonarcloud.io" /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
 
       - name: Build C# Application
-
         run: msbuild.exe "SomeConsoleApplication.sln" /t:Rebuild /p:Configuration=Release /p:Platform="Any CPU" /p:RestorePackages=true /p:RestoreNoCache=true
 
       - name: End SonarCloud Scan
