@@ -16,11 +16,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup .NET SDK
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '6.0.x'
-
       - name: Setup MSBuild and NuGet
         uses: microsoft/setup-msbuild@v1.1
 
@@ -33,25 +28,26 @@ jobs:
         run: dotnet sonarscanner begin /k:"c-devsecops-project" /o:"c-devsecops-project" /d:sonar.host.url="https://sonarcloud.io" /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
 
       - name: Build C# Application
-        run: dotnet build "SomeConsoleApplication.sln" --configuration Release --no-restore
+
+        run: msbuild.exe "SomeConsoleApplication.sln" /t:Rebuild /p:Configuration=Release /p:Platform="Any CPU" /p:RestorePackages=true /p:RestoreNoCache=true
 
       - name: End SonarCloud Scan
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: dotnet sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
-        
+
   security:
     runs-on: ubuntu-latest
     needs: sast-scan
     name: Run the SCA scan on the source code
     steps:
-      - uses: actions/checkout@master
-      - name: RunSnyk to check for vulnerabilities
+      - uses: actions/checkout@v4
+      - name: Run Snyk to check for vulnerabilities
         uses: snyk/actions/dotnet@master
         continue-on-error: true
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-  
+
   zap-scan:
     runs-on: ubuntu-latest
     needs: security
@@ -60,7 +56,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: master
+          ref: ${{ github.ref }}
+
       - name: ZAP Scan
         uses: zaproxy/action-baseline@v0.14.0
         with:
